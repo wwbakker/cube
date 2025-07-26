@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Three.js + TypeScript</title>
+  </head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html,
+    body,
+    canvas {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+  </style>
+  <body>
+    <canvas id="webgl"></canvas>
+    <script type="module" src="/src/main.ts"></script>
+    <div
+      id="fps-counter"
+      style="
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        font-size: 20px;
+      "
+    ></div>
+  </body>
+</html>
