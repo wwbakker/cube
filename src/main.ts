@@ -1,11 +1,10 @@
 import * as THREE from "three"
 import { initializeWindow } from "./layout/window"
 import { updateFPSCounter } from "./layout/fps-counter"
-import { loadBag, updateBag } from "./world/bag"
-import { loadCursor3d, updateCursor3d } from "./layout/cursor3d"
+import { bag } from "./world/bag"
+import { cursor3d } from "./layout/cursor3d"
 
 const scene = new THREE.Scene()
-const hud = new THREE.Scene()
 const canvas = document.getElementById("webgl") as HTMLCanvasElement
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -15,12 +14,10 @@ const camera = new THREE.PerspectiveCamera(
 )
 
 const renderer = new THREE.WebGLRenderer({ canvas })
-const geometry = new THREE.BoxGeometry()
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-const cursorPosition = new THREE.Vector3(0, 0, 0)
+scene.add(bag)
+
 // const cube = new THREE.Mesh(geometry, material)
-loadBag(scene) // Load bag slots into the scene
-loadCursor3d(hud)
+// loadCursor3d(hud)
 // scene.add(cube)
 
 camera.position.z = 10
@@ -28,14 +25,13 @@ renderer.autoClear = false
 
 const gameLoop = () => {
   updateFPSCounter()
-  updateBag()
-  updateCursor3d(cursorPosition)
-  // cube.rotation.x += 0.01
-  // cube.rotation.y += 0.01
+  scene.rotation.y += 0.01
+  cursor3d.rotation.y += 0.01
+
   renderer.clear()
   renderer.render(scene, camera)
   renderer.clearDepth()
-  renderer.render(hud, camera)
+  renderer.render(cursor3d, camera)
 
   requestAnimationFrame(gameLoop)
 }

@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { Vector3 } from "three"
+import { Object3D, Vector3 } from "three"
 import { cubeWireFrame } from "./bag-geometry"
 // column, row, layer
 
@@ -58,8 +58,6 @@ const createSelectedShapeGeometry = () => {
 const createBagGeometry = () => {
   const result = new THREE.Mesh()
   availableBagSlots.forEach((bagSlot) => {
-    // const cube = cubeWireFrame.clone()
-    // cube.position.set(bagSlot.x - 0.5, bagSlot.y - 0.5, bagSlot.z - 0.5)
     result.add(bagSlot.lines)
   })
   result.position.set(-4.5, -4.5, -4.5) // Center the bag geometry to 0,0,0
@@ -68,16 +66,8 @@ const createBagGeometry = () => {
 
 const bagGeometry = createBagGeometry()
 const selectedShapeGeometry = createSelectedShapeGeometry()
-const bagWorldObject = new THREE.Object3D().add(
+
+export const bag: Object3D = new THREE.Object3D().add(
   bagGeometry,
   selectedShapeGeometry,
 )
-
-export const loadBag = (scene: THREE.Scene) => {
-  scene.add(bagWorldObject)
-}
-
-export const updateBag = () => {
-  // bagWorldObject.rotation.x += 0.01
-  bagWorldObject.rotation.y += 0.01
-}

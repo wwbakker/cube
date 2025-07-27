@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { Object3D } from "three"
 
 const points = [
   new THREE.Vector3(-0.5, 0, 0),
@@ -15,11 +16,7 @@ const material = new THREE.LineBasicMaterial({ color: 0xffffff })
 const lines = new THREE.LineSegments(cubeGeometry, material)
 
 const cursorMesh = new THREE.Mesh().add(lines)
+const cursorPosition = new THREE.Vector3(0, 0, 0)
 
-export const loadCursor3d = (scene: THREE.Scene) => {
-  scene.add(cursorMesh)
-}
-
-export const updateCursor3d = (position: THREE.Vector3) => {
-  cursorMesh.position.copy(position)
-}
+export const cursor3d = new Object3D().add(cursorMesh)
+cursor3d.position.copy(cursorPosition)
