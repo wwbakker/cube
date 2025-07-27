@@ -1,7 +1,7 @@
 import * as THREE from "three"
 import { initializeWindow } from "./layout/window"
 import { updateFPSCounter } from "./layout/fps-counter"
-import { loadBag, updateBag } from "./layout/bag"
+import { loadBag, updateBag } from "./world/bag"
 import { loadCursor3d, updateCursor3d } from "./layout/cursor3d"
 
 const scene = new THREE.Scene()
