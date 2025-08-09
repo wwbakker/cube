@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { addChildren, GameObject } from "./game-object"
+import { addChildren, GameObject, setPositionToBottomLeft } from "./game-object"
 import { createWall, Wall } from "./wall"
 
 const createBoardMesh = (width: number, height: number): THREE.Mesh => {
@@ -9,7 +9,9 @@ const createBoardMesh = (width: number, height: number): THREE.Mesh => {
     color: 0xcccccc,
     side: THREE.DoubleSide,
   })
-  return new THREE.Mesh(geometry, material)
+  const mesh = new THREE.Mesh(geometry, material)
+  setPositionToBottomLeft(mesh);
+  return mesh;
 }
 
 interface Board extends GameObject {
@@ -33,16 +35,37 @@ const createOuterWalls: (width: number, height: number) => Wall[] = (
   return result
 }
 
+const createInnerWalls: (width: number, height: number) => Wall[] = (
+  width: number,
+  height: number,
+) => {
+  const result: Wall[] = []
+  for (let x = 1; x < width-1; x++) {
+    for (let y = 1; y < height-1; y++) {
+      if (x % 2 === 0 && y % 2 === 0) {
+        result.push(createWall("WallIndestructible", new THREE.Vector2(x, y)))
+      }
+      else if (!(x <= 2 && y <= 2))
+      {
+        result.push(createWall("WallDestructable", new THREE.Vector2(x, y)))
+      }
+    }
+  }
+  return result
+}
+
 export const createBoard = (width: number, height: number): Board => {
   const board: Board = {
-    position: new THREE.Vector2(0, 0), // Origin at top-left corner
+    position: new THREE.Vector2(0, 0), // Origin at bottom-left corner
     width,
     height,
     children: [],
     mesh: createBoardMesh(width, height),
   }
   const outerWalls = createOuterWalls(width, height)
+  const innerWalls = createInnerWalls(width, height)
   addChildren(board, outerWalls)
+  addChildren(board, innerWalls)
 
   return board
 }
