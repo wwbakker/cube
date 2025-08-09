@@ -3,6 +3,7 @@ import { initializeWindow } from "./layout/window"
 import { updateFPSCounter } from "./layout/fps-counter"
 import { cursor3d } from "./layout/cursor3d"
 import { createBoard } from "./world/board"
+import { createCharacterMesh } from "./world/character"
 
 const canvas = document.getElementById("webgl") as HTMLCanvasElement
 const camera = new THREE.PerspectiveCamera(
@@ -30,8 +31,13 @@ camera.position.x = 5
 
 const createScene = () => {
   const scene = new THREE.Scene()
-  scene.add(board.mesh)
-
+  scene.add(new THREE.AmbientLight)
+  scene.add(board.obj3D)
+  const character = createCharacterMesh()
+  if (character)
+  {
+    scene.add(character);
+  }
   return scene
 }
 

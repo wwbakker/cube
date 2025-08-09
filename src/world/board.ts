@@ -10,7 +10,6 @@ const createBoardMesh = (width: number, height: number): THREE.Mesh => {
     side: THREE.DoubleSide,
   })
   const mesh = new THREE.Mesh(geometry, material)
-  setPositionToBottomLeft(mesh);
   return mesh;
 }
 
@@ -60,8 +59,10 @@ export const createBoard = (width: number, height: number): Board => {
     width,
     height,
     children: [],
-    mesh: createBoardMesh(width, height),
+    obj3D: createBoardMesh(width, height),
+    boundingbox: new THREE.Box3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(width, height, 0))
   }
+  setPositionToBottomLeft(board);
   const outerWalls = createOuterWalls(width, height)
   const innerWalls = createInnerWalls(width, height)
   addChildren(board, outerWalls)

@@ -2,7 +2,8 @@ import * as THREE from "three"
 
 export interface GameObject {
   position: THREE.Vector2
-  mesh: THREE.Mesh
+  obj3D: THREE.Object3D
+  boundingbox: THREE.Box3
   children?: GameObject[]
 }
 
@@ -11,7 +12,7 @@ export const updatePosition = (
   newPosition: THREE.Vector2,
 ) => {
   object["position"] = newPosition
-  object.mesh.position.set(newPosition.x, newPosition.y, 0) // Assuming z
+  object.obj3D.position.set(newPosition.x, newPosition.y, 0) // Assuming z
 }
 
 export const addChildren = (parent: GameObject, children: GameObject[]) => {
@@ -20,42 +21,35 @@ export const addChildren = (parent: GameObject, children: GameObject[]) => {
   }
   parent.children.push(...children)
   children.forEach((child) => {
-    parent.mesh.add(child.mesh)
-    setOriginToParentBottomLeft(parent.mesh, child.mesh)
-    placeOnTop(parent.mesh, child.mesh)
-    child.mesh.translateX(child.position.x)
-    child.mesh.translateY(child.position.y)
+    parent.obj3D.add(child.obj3D)
+    setOriginToParentBottomLeft(parent, child)
+    placeOnTop(parent, child)
+    child.obj3D.translateX(child.position.x)
+    child.obj3D.translateY(child.position.y)
   })
 }
 
-export const getBoundingBox = (mesh: THREE.Mesh) : THREE.Box3 =>  {
-  if (!mesh.geometry.boundingBox) {
-    mesh.geometry.computeBoundingBox()
-  }
-  return mesh.geometry.boundingBox!;
+export const setPositionToBottomLeft = (obj: GameObject) => {
+  const size = getMeshSize(obj)
+  obj.obj3D.translateX(size.x/2)
+  obj.obj3D.translateY(size.y/2)
 }
 
-export const setPositionToBottomLeft = (mesh: THREE.Mesh) => {
-  const size = getMeshSize(mesh)
-  mesh.translateX(size.x/2)
-  mesh.translateY(size.y/2)
+export const setOriginToParentBottomLeft = (parent: GameObject, child: GameObject) => {
+  const parentsize = getMeshSize(parent)
+  child.obj3D.translateX(-parentsize.x/2)
+  child.obj3D.translateY(-parentsize.y/2)
+  child.obj3D.translateZ(-parentsize.z/2)
 }
 
-export const setOriginToParentBottomLeft = (parentmesh: THREE.Mesh, childmesh: THREE.Mesh) => {
-  const parentsize = getMeshSize(parentmesh)
-  childmesh.translateX(-parentsize.x/2)
-  childmesh.translateY(-parentsize.y/2)
-  childmesh.translateZ(-parentsize.z/2)
+export const placeOnTop = (parent: GameObject, child: GameObject) => {
+  const parentsize = getMeshSize(parent)
+  const childsize = getMeshSize(child)
+  child.obj3D.translateZ(-parentsize.z/2 + (childsize.z/2)) // Assuming z
 }
 
-export const placeOnTop = (parentmesh: THREE.Mesh, childmesh: THREE.Mesh) => {
-  const parentsize = getMeshSize(parentmesh)
-  const childsize = getMeshSize(childmesh)
-  childmesh.position.set(childmesh.position.x, childmesh.position.y, childmesh.position.z - parentsize.z/2 + (childsize.z/2)) // Assuming z
-}
-
-export const getMeshSize = (mesh: THREE.Mesh) => {
-  const bb = getBoundingBox(mesh);
+export const getMeshSize = (obj: GameObject) => {
+  const bb = obj.boundingbox
   const size = new THREE.Vector3;
   bb.getSize(size);
   return size;

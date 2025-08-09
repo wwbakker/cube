@@ -1,0 +1,11 @@
+Model Information:
+* title:	Bomberman
+* source:	https://sketchfab.com/3d-models/bomberman-af5dd3d0d2774d458d861f12e56e8ce7
+* author:	prinsuRj (https://sketchfab.com/prinsuRj)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Bomberman" (https://sketchfab.com/3d-models/bomberman-af5dd3d0d2774d458d861f12e56e8ce7) by prinsuRj (https://sketchfab.com/prinsuRj) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
