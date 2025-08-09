@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { Vector3 } from "three"
 import { addChildren, GameObject, setPositionToBottomLeft } from "./game-object"
 import { createWall, Wall } from "./wall"
 
@@ -9,11 +10,11 @@ const createBoardMesh = (width: number, height: number): THREE.Mesh => {
     color: 0xcccccc,
     side: THREE.DoubleSide,
   })
-  const mesh = new THREE.Mesh(geometry, material)
-  return mesh;
+
+  return new THREE.Mesh(geometry, material)
 }
 
-interface Board extends GameObject {
+export interface Board extends GameObject {
   width: number
   height: number
   children: GameObject[]
@@ -39,13 +40,11 @@ const createInnerWalls: (width: number, height: number) => Wall[] = (
   height: number,
 ) => {
   const result: Wall[] = []
-  for (let x = 1; x < width-1; x++) {
-    for (let y = 1; y < height-1; y++) {
+  for (let x = 1; x < width - 1; x++) {
+    for (let y = 1; y < height - 1; y++) {
       if (x % 2 === 0 && y % 2 === 0) {
         result.push(createWall("WallIndestructible", new THREE.Vector2(x, y)))
-      }
-      else if (!(x <= 2 && y <= 2))
-      {
+      } else if (!(x <= 2 && y <= 2)) {
         result.push(createWall("WallDestructable", new THREE.Vector2(x, y)))
       }
     }
@@ -55,18 +54,26 @@ const createInnerWalls: (width: number, height: number) => Wall[] = (
 
 export const createBoard = (width: number, height: number): Board => {
   const board: Board = {
+    type: "Board",
     position: new THREE.Vector2(0, 0), // Origin at bottom-left corner
     width,
     height,
     children: [],
     obj3D: createBoardMesh(width, height),
-    boundingbox: new THREE.Box3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(width, height, 0))
+    size: new Vector3(width, height, 0),
   }
-  setPositionToBottomLeft(board);
+  setPositionToBottomLeft(board)
   const outerWalls = createOuterWalls(width, height)
   const innerWalls = createInnerWalls(width, height)
   addChildren(board, outerWalls)
   addChildren(board, innerWalls)
 
   return board
+}
+
+export const getWalls = (board: Board): Wall[] => {
+  return board.children.filter(
+    (child): child is Wall =>
+      child.type === "WallDestructable" || child.type === "WallIndestructible",
+  )
 }

@@ -8,8 +8,8 @@ const createWallMesh = (type: WallType): THREE.Mesh => {
   const material = new THREE.MeshBasicMaterial({
     color: type === "WallDestructable" ? 0xff0000 : 0x0000ff, // Red for destructible, blue for indestructible
   })
-  const mesh = new THREE.Mesh(geometry, material)
-  return mesh
+
+  return new THREE.Mesh(geometry, material)
 }
 
 export interface Wall extends GameObject {
@@ -19,13 +19,12 @@ export interface Wall extends GameObject {
 }
 
 export const createWall = (type: WallType, position: THREE.Vector2): Wall => {
-  const wall : Wall =  {
+  const wall: Wall = {
     position,
     type,
     obj3D: createWallMesh(type),
-    boundingbox: new THREE.Box3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1))
+    size: new THREE.Vector3(1, 1, 1),
   }
   setPositionToBottomLeft(wall)
-  return wall;
+  return wall
 }
-
