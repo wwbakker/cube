@@ -1,6 +1,6 @@
 import * as THREE from "three"
-import { WallType } from "./wall"
 import { Vector3 } from "three"
+import { WallType } from "./wall"
 
 export type GameObjectType = "Board" | "Character" | WallType
 
@@ -9,7 +9,6 @@ export interface GameObject {
   position: THREE.Vector2
   size: THREE.Vector3
   obj3D: THREE.Object3D
-  // boundingBox: THREE.Box3
   children?: GameObject[]
 }
 
@@ -63,9 +62,42 @@ export const getBoundingBox = (obj: GameObject): THREE.Box2 => {
   return new THREE.Box2(min, max)
 }
 
-// export const getMeshSize = (obj: GameObject) => {
-//   const bb = obj.boundingBox
-//   const size = new THREE.Vector3()
-//   bb.getSize(size)
-//   return size
-// }
+export const getCenterY = (obj: GameObject): number => {
+  return obj.position.y + obj.size.y * 0.5
+}
+
+export const getCenterX = (obj: GameObject): number => {
+  return obj.position.x + obj.size.x * 0.5
+}
+
+export const getEdgeDistanceY = (
+  obj1: GameObject,
+  obj2: GameObject,
+): number => {
+  const boundingBox1 = getBoundingBox(obj1)
+  const boundingBox2 = getBoundingBox(obj2)
+  // which bounding box is higher?
+  const bb1CenterY = getCenterY(obj1)
+  const bb2CenterY = getCenterY(obj2)
+  // compare the appropriate edges
+
+  return bb1CenterY < bb2CenterY
+    ? boundingBox2.min.y - boundingBox1.max.y
+    : boundingBox2.max.y - boundingBox1.min.y
+}
+
+export const getEdgeDistanceX = (
+  obj1: GameObject,
+  obj2: GameObject,
+): number => {
+  const boundingBox1 = getBoundingBox(obj1)
+  const boundingBox2 = getBoundingBox(obj2)
+  // which bounding box is more to the left?
+  const bb1CenterX = getCenterX(obj1)
+  const bb2CenterX = getCenterX(obj2)
+  // compare the appropriate edges
+
+  return bb1CenterX < bb2CenterX
+    ? boundingBox2.min.x - boundingBox1.max.x
+    : boundingBox2.max.x - boundingBox1.min.x
+}

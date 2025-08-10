@@ -1,7 +1,8 @@
 import * as THREE from "three"
-import { addPosition, getBoundingBox } from "./game-object"
+import { addPosition, getEdgeDistanceX, getEdgeDistanceY } from "./game-object"
 import { Board, createBoard, getWalls } from "./board"
 import { CardinalDirection, Character, createCharacter } from "./character"
+import { debug } from "../layout/debug-info"
 
 export interface World {
   board: Board
@@ -20,7 +21,7 @@ export const createWorld = (width: number, height: number): World => {
 export const determineDeltaPosition = (
   character: Character,
   deltaTime: number,
-) => character.moveSpeed * (deltaTime * 0.001) // Convert speed to units per millisecond
+) => Math.min(0.5, character.moveSpeed * (deltaTime * 0.001)) // Convert speed to units per millisecond
 
 export const determineTargetPositionOnBoard = (
   playerPositionOnBoard: THREE.Vector2,
@@ -28,17 +29,97 @@ export const determineTargetPositionOnBoard = (
 ) => {
   switch (actionRequest) {
     case "up":
-      return playerPositionOnBoard.add(new THREE.Vector2(0, 1))
+      return playerPositionOnBoard.clone().add(new THREE.Vector2(0, 1)).floor()
     case "down":
-      return playerPositionOnBoard.add(new THREE.Vector2(0, -1))
+      return playerPositionOnBoard.clone().add(new THREE.Vector2(0, -1)).ceil()
     case "left":
-      return playerPositionOnBoard.add(new THREE.Vector2(-1, 0))
+      return playerPositionOnBoard.clone().add(new THREE.Vector2(-1, 0)).ceil()
     case "right":
-      return playerPositionOnBoard.add(new THREE.Vector2(1, 0))
+      return playerPositionOnBoard.clone().add(new THREE.Vector2(1, 0)).floor()
     default:
       return playerPositionOnBoard
   }
 }
+
+const movePlayer = (
+  player: Character,
+  board: Board,
+  directionRequest: CardinalDirection,
+  requestedPositionDelta: number,
+) => {
+  // const playerPositionOnBoard = player.position.clone()
+  const targetPositionOnBoard = determineTargetPositionOnBoard(
+    player.position,
+    directionRequest,
+  )
+  debug("target position", targetPositionOnBoard)
+  const wallAtTargetPosition = getWalls(board).find((wall) =>
+    wall.position.equals(targetPositionOnBoard),
+  )
+  debug("wall at target position", !!wallAtTargetPosition)
+
+  switch (directionRequest) {
+    case "up":
+      {
+        if (!wallAtTargetPosition) {
+          addPosition(player, new THREE.Vector2(0, requestedPositionDelta))
+          break
+        }
+        const edgeDistance = getEdgeDistanceY(player, wallAtTargetPosition)
+
+        addPosition(
+          player,
+          new THREE.Vector2(0, Math.min(requestedPositionDelta, edgeDistance)),
+        )
+      }
+      break
+    case "down":
+      {
+        if (!wallAtTargetPosition) {
+          addPosition(player, new THREE.Vector2(0, -requestedPositionDelta))
+          break
+        }
+        const edgeDistance = getEdgeDistanceY(player, wallAtTargetPosition)
+        // debug("edge distance", edgeDistance)
+        debug("requested position delta", requestedPositionDelta)
+        addPosition(
+          player,
+          new THREE.Vector2(0, Math.max(-requestedPositionDelta, edgeDistance)),
+        )
+      }
+      break
+    case "left":
+      {
+        if (!wallAtTargetPosition) {
+          addPosition(player, new THREE.Vector2(-requestedPositionDelta, 0))
+          break
+        }
+        const edgeDistance = getEdgeDistanceX(player, wallAtTargetPosition)
+        addPosition(
+          player,
+          new THREE.Vector2(Math.max(-requestedPositionDelta, edgeDistance), 0),
+        )
+      }
+      break
+
+    case "right":
+      {
+        if (!wallAtTargetPosition) {
+          addPosition(player, new THREE.Vector2(requestedPositionDelta, 0))
+          break
+        }
+        const edgeDistance = getEdgeDistanceX(player, wallAtTargetPosition)
+        addPosition(
+          player,
+          new THREE.Vector2(Math.min(requestedPositionDelta, edgeDistance), 0),
+        )
+      }
+      break
+    default:
+      break
+  }
+}
+
 export const updatePlayer = (
   player: Character,
   board: Board,
@@ -47,39 +128,20 @@ export const updatePlayer = (
   if (player.actionRequest !== "move") {
     return
   }
+  // Consider the first direction request, is it allowed?
   const currentDirectionRequest = player.directionRequests[0]
   if (!currentDirectionRequest) {
     return
   }
-
-  // Consider the first direction request, is it allowed?
-  const playerPositionOnBoard = player.position.clone().floor()
-  const targetPositionOnBoard = determineTargetPositionOnBoard(
-    playerPositionOnBoard,
-    currentDirectionRequest,
-  )
-  const wallAtTargetPosition = getWalls(board).find((wall) =>
-    wall.position.equals(targetPositionOnBoard),
-  )
   const deltaPosition = determineDeltaPosition(player, deltaTime)
-  switch (currentDirectionRequest) {
-    case "up":
-      const proposedPosition = player.position.clone()
-      proposedPosition.y += deltaPosition // TODO: do clamping for low FPS
-      if (!wallAtTargetPosition) {
-        addPosition(player, new THREE.Vector2(0, deltaPosition))
-        break
-      }
-      const wallBoundingBox = getBoundingBox(wallAtTargetPosition)
-      const playerBoundingBox = getBoundingBox(player)
-
-      if (!wallBoundingBox.intersectsBox(playerBoundingBox)) {
-        addPosition(player, new THREE.Vector2(0, deltaPosition))
-      }
-      break
-    default:
-      break
+  movePlayer(player, board, currentDirectionRequest, deltaPosition)
+  // Consider the second direction request, is it allowed?
+  const previousDirectionRequest = player.directionRequests[1]
+  if (previousDirectionRequest) {
+    movePlayer(player, board, previousDirectionRequest, deltaPosition)
   }
+
+  debug("p1 position", player.position)
 }
 
 export const updateWorld = (world: World, deltaTime: number) => {
