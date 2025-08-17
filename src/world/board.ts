@@ -1,23 +1,8 @@
 import * as THREE from "three"
-import { Vector3 } from "three"
-import {
-  addChildren,
-  BoardObject,
-  GameObject,
-  setPositionToBottomLeft,
-} from "./game-object"
+import { Object3D, Vector3 } from "three"
+import { addChildren, BoardObject, GameObject } from "./game-object"
 import { createWall, Wall } from "./wall"
-
-const createBoardMesh = (width: number, height: number): THREE.Mesh => {
-  // Floor
-  const geometry = new THREE.PlaneGeometry(width, height)
-  const material = new THREE.MeshBasicMaterial({
-    color: 0xcccccc,
-    side: THREE.DoubleSide,
-  })
-
-  return new THREE.Mesh(geometry, material)
-}
+import { createFloor } from "./floor"
 
 export interface Board extends BoardObject {
   width: number
@@ -64,15 +49,15 @@ export const createBoard = (width: number, height: number): Board => {
     width,
     height,
     children: [],
-    obj3D: createBoardMesh(width, height),
+    obj3D: new Object3D(),
     size: new Vector3(width, height, 0),
   }
-  setPositionToBottomLeft(board)
+  const floor = createFloor(width, height)
   const outerWalls = createOuterWalls(width, height)
   const innerWalls = createInnerWalls(width, height)
   addChildren(board, outerWalls)
   addChildren(board, innerWalls)
-
+  addChildren(board, [floor])
   return board
 }
 

@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { BoardObject, GameObject, setPositionToBottomLeft } from "./game-object"
+import { BoardObject } from "./game-object"
 
 export type WallType = "WallDestructable" | "WallIndestructible" // rest is floor
 
@@ -24,6 +24,6 @@ export const createWall = (type: WallType, position: THREE.Vector2): Wall => {
     obj3D: createWallMesh(type),
     size: new THREE.Vector3(1, 1, 1),
   }
-  setPositionToBottomLeft(wall)
+  // setPositionToBottomLeft(wall)
   return wall
 }

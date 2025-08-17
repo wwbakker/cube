@@ -1,9 +1,5 @@
 import * as THREE from "three"
-import {
-  EntityObject,
-  GameObject,
-  setPositionToBottomLeft,
-} from "./game-object"
+import { EntityObject } from "./game-object"
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 
 export type CardinalDirection = "up" | "down" | "left" | "right"
@@ -38,7 +34,6 @@ export const createCharacter = (position: THREE.Vector2) => {
     moveSpeed: 2, // Speed in units per second
   }
   character.obj3D.position.set(character.position.x, character.position.y, 0)
-  setPositionToBottomLeft(character)
   return character
 }
 

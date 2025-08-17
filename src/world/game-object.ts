@@ -3,7 +3,7 @@ import { Vector3 } from "three"
 import { WallType } from "./wall"
 import { BoardPosition, WorldPosition } from "./position"
 
-export type GameObjectType = "Board" | "Character" | WallType
+export type GameObjectType = "Floor" | "Board" | "Character" | WallType
 
 export interface BoardObject extends GameObject {
   position: BoardPosition
@@ -33,27 +33,11 @@ export const addChildren = (parent: GameObject, children: GameObject[]) => {
   parent.children.push(...children)
   children.forEach((child) => {
     parent.obj3D.add(child.obj3D)
-    setOriginToParentBottomLeft(parent, child)
+    // setOriginToParentBottomLeft(parent, child)
     placeOnTop(parent, child)
     child.obj3D.translateX(child.position.x)
     child.obj3D.translateY(child.position.y)
   })
-}
-
-export const setPositionToBottomLeft = (obj: GameObject) => {
-  const size = obj.size
-  obj.obj3D.translateX(size.x / 2)
-  obj.obj3D.translateY(size.y / 2)
-}
-
-export const setOriginToParentBottomLeft = (
-  parent: GameObject,
-  child: GameObject,
-) => {
-  const parentsize = parent.size
-  child.obj3D.translateX(-parentsize.x / 2)
-  child.obj3D.translateY(-parentsize.y / 2)
-  child.obj3D.translateZ(-parentsize.z / 2)
 }
 
 export const placeOnTop = (parent: GameObject, child: GameObject) => {
