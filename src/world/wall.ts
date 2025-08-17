@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { GameObject, setPositionToBottomLeft } from "./game-object"
+import { BoardObject, GameObject, setPositionToBottomLeft } from "./game-object"
 
 export type WallType = "WallDestructable" | "WallIndestructible" // rest is floor
 
@@ -12,9 +12,8 @@ const createWallMesh = (type: WallType): THREE.Mesh => {
   return new THREE.Mesh(geometry, material)
 }
 
-export interface Wall extends GameObject {
+export interface Wall extends BoardObject {
   type: WallType
-  position: THREE.Vector2 // Natural numbers
   obj3D: THREE.Mesh
 }
 

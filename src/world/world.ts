@@ -3,6 +3,7 @@ import { addPosition, getEdgeDistanceX, getEdgeDistanceY } from "./game-object"
 import { Board, createBoard, getWalls } from "./board"
 import { CardinalDirection, Character, createCharacter } from "./character"
 import { debug } from "../layout/debug-info"
+import { moveIntoDirection, worldToBoardPosition } from "./position"
 
 export interface World {
   board: Board
@@ -18,38 +19,27 @@ export const createWorld = (width: number, height: number): World => {
   }
 }
 
-export const determineDeltaPosition = (
+export const determineDeltaDistance = (
   character: Character,
   deltaTime: number,
 ) => Math.min(0.5, character.moveSpeed * (deltaTime * 0.001)) // Convert speed to units per millisecond
 
-export const determineTargetPositionOnBoard = (
-  playerPositionOnBoard: THREE.Vector2,
-  actionRequest: CardinalDirection,
-) => {
-  switch (actionRequest) {
-    case "up":
-      return playerPositionOnBoard.clone().add(new THREE.Vector2(0, 1)).floor()
-    case "down":
-      return playerPositionOnBoard.clone().add(new THREE.Vector2(0, -1)).ceil()
-    case "left":
-      return playerPositionOnBoard.clone().add(new THREE.Vector2(-1, 0)).ceil()
-    case "right":
-      return playerPositionOnBoard.clone().add(new THREE.Vector2(1, 0)).floor()
-    default:
-      return playerPositionOnBoard
-  }
+enum MovePlayerResult {
+  Moved,
+  Blocked,
 }
-
 const movePlayer = (
   player: Character,
   board: Board,
   directionRequest: CardinalDirection,
   requestedPositionDelta: number,
-) => {
+): MovePlayerResult => {
   // const playerPositionOnBoard = player.position.clone()
-  const targetPositionOnBoard = determineTargetPositionOnBoard(
-    player.position,
+  debug("player world position", player.position)
+  const positionOnBoard = worldToBoardPosition(player.position.clone())
+  debug("player board position", positionOnBoard)
+  const targetPositionOnBoard = moveIntoDirection(
+    positionOnBoard.clone(),
     directionRequest,
   )
   debug("target position", targetPositionOnBoard)
@@ -66,13 +56,12 @@ const movePlayer = (
           break
         }
         const edgeDistance = getEdgeDistanceY(player, wallAtTargetPosition)
-
         addPosition(
           player,
           new THREE.Vector2(0, Math.min(requestedPositionDelta, edgeDistance)),
         )
       }
-      break
+      return MovePlayerResult.Moved
     case "down":
       {
         if (!wallAtTargetPosition) {
@@ -80,14 +69,12 @@ const movePlayer = (
           break
         }
         const edgeDistance = getEdgeDistanceY(player, wallAtTargetPosition)
-        // debug("edge distance", edgeDistance)
-        debug("requested position delta", requestedPositionDelta)
         addPosition(
           player,
           new THREE.Vector2(0, Math.max(-requestedPositionDelta, edgeDistance)),
         )
       }
-      break
+      return MovePlayerResult.Moved
     case "left":
       {
         if (!wallAtTargetPosition) {
@@ -100,8 +87,7 @@ const movePlayer = (
           new THREE.Vector2(Math.max(-requestedPositionDelta, edgeDistance), 0),
         )
       }
-      break
-
+      return MovePlayerResult.Moved
     case "right":
       {
         if (!wallAtTargetPosition) {
@@ -114,10 +100,11 @@ const movePlayer = (
           new THREE.Vector2(Math.min(requestedPositionDelta, edgeDistance), 0),
         )
       }
-      break
+      return MovePlayerResult.Moved
     default:
       break
   }
+  return MovePlayerResult.Blocked
 }
 
 export const updatePlayer = (
@@ -133,12 +120,17 @@ export const updatePlayer = (
   if (!currentDirectionRequest) {
     return
   }
-  const deltaPosition = determineDeltaPosition(player, deltaTime)
-  movePlayer(player, board, currentDirectionRequest, deltaPosition)
+  const distance = determineDeltaDistance(player, deltaTime)
+  const moveResult = movePlayer(
+    player,
+    board,
+    currentDirectionRequest,
+    distance,
+  )
   // Consider the second direction request, is it allowed?
   const previousDirectionRequest = player.directionRequests[1]
-  if (previousDirectionRequest) {
-    movePlayer(player, board, previousDirectionRequest, deltaPosition)
+  if (moveResult === MovePlayerResult.Blocked && previousDirectionRequest) {
+    movePlayer(player, board, previousDirectionRequest, distance)
   }
 
   debug("p1 position", player.position)

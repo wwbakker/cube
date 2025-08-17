@@ -1,10 +1,14 @@
 import * as THREE from "three"
-import { GameObject, setPositionToBottomLeft } from "./game-object"
+import {
+  EntityObject,
+  GameObject,
+  setPositionToBottomLeft,
+} from "./game-object"
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 
 export type CardinalDirection = "up" | "down" | "left" | "right"
 
-export interface Character extends GameObject {
+export interface Character extends EntityObject {
   // position: THREE.Vector2 // Floating point numbers
   directionRequests: CardinalDirection[]
   actionRequest: ActionRequest

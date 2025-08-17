@@ -1,6 +1,11 @@
 import * as THREE from "three"
 import { Vector3 } from "three"
-import { addChildren, GameObject, setPositionToBottomLeft } from "./game-object"
+import {
+  addChildren,
+  BoardObject,
+  GameObject,
+  setPositionToBottomLeft,
+} from "./game-object"
 import { createWall, Wall } from "./wall"
 
 const createBoardMesh = (width: number, height: number): THREE.Mesh => {
@@ -14,7 +19,7 @@ const createBoardMesh = (width: number, height: number): THREE.Mesh => {
   return new THREE.Mesh(geometry, material)
 }
 
-export interface Board extends GameObject {
+export interface Board extends BoardObject {
   width: number
   height: number
   children: GameObject[]
@@ -44,7 +49,7 @@ const createInnerWalls: (width: number, height: number) => Wall[] = (
     for (let y = 1; y < height - 1; y++) {
       if (x % 2 === 0 && y % 2 === 0) {
         result.push(createWall("WallIndestructible", new THREE.Vector2(x, y)))
-      } else if (!(x <= 2 && y <= 2)) {
+      } else if (!(x <= 3 && y <= 3)) {
         result.push(createWall("WallDestructable", new THREE.Vector2(x, y)))
       }
     }

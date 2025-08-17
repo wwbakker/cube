@@ -1,8 +1,17 @@
 import * as THREE from "three"
 import { Vector3 } from "three"
 import { WallType } from "./wall"
+import { BoardPosition, WorldPosition } from "./position"
 
 export type GameObjectType = "Board" | "Character" | WallType
+
+export interface BoardObject extends GameObject {
+  position: BoardPosition
+}
+
+export interface EntityObject extends GameObject {
+  position: WorldPosition
+}
 
 export interface GameObject {
   type: GameObjectType
