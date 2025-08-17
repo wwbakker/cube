@@ -7,7 +7,7 @@ export interface WorldPosition extends THREE.Vector2 {}
 
 export const worldToBoardPosition = (
   worldPosition: WorldPosition,
-): BoardPosition => worldPosition.floor() as BoardPosition
+): BoardPosition => worldPosition.add({x: 0.5, y: 0.5}).floor() as BoardPosition
 
 export const moveIntoDirection = (
   from: BoardPosition,

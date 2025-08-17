@@ -33,7 +33,7 @@ const movePlayer = (
   board: Board,
   directionRequest: CardinalDirection,
   requestedPositionDelta: number,
-): MovePlayerResult => {
+) => {
   // const playerPositionOnBoard = player.position.clone()
   debug("player world position", player.position)
   const positionOnBoard = worldToBoardPosition(player.position.clone())
@@ -61,7 +61,7 @@ const movePlayer = (
           new THREE.Vector2(0, Math.min(requestedPositionDelta, edgeDistance)),
         )
       }
-      return MovePlayerResult.Moved
+      return
     case "down":
       {
         if (!wallAtTargetPosition) {
@@ -74,7 +74,7 @@ const movePlayer = (
           new THREE.Vector2(0, Math.max(-requestedPositionDelta, edgeDistance)),
         )
       }
-      return MovePlayerResult.Moved
+      return
     case "left":
       {
         if (!wallAtTargetPosition) {
@@ -87,7 +87,7 @@ const movePlayer = (
           new THREE.Vector2(Math.max(-requestedPositionDelta, edgeDistance), 0),
         )
       }
-      return MovePlayerResult.Moved
+      return
     case "right":
       {
         if (!wallAtTargetPosition) {
@@ -100,11 +100,11 @@ const movePlayer = (
           new THREE.Vector2(Math.min(requestedPositionDelta, edgeDistance), 0),
         )
       }
-      return MovePlayerResult.Moved
+      return
     default:
       break
   }
-  return MovePlayerResult.Blocked
+  return
 }
 
 export const updatePlayer = (
@@ -121,7 +121,7 @@ export const updatePlayer = (
     return
   }
   const distance = determineDeltaDistance(player, deltaTime)
-  const moveResult = movePlayer(
+  movePlayer(
     player,
     board,
     currentDirectionRequest,
@@ -129,7 +129,7 @@ export const updatePlayer = (
   )
   // Consider the second direction request, is it allowed?
   const previousDirectionRequest = player.directionRequests[1]
-  if (moveResult === MovePlayerResult.Blocked && previousDirectionRequest) {
+  if (previousDirectionRequest) {
     movePlayer(player, board, previousDirectionRequest, distance)
   }
 
