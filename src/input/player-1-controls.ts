@@ -1,6 +1,19 @@
-import { Character } from "../world/character"
+import { CardinalDirection } from "../world/character"
 
-export const bindPlayer1Controls = (character: Character) => {
+export interface PlayerTickInput {
+  direction: CardinalDirection | null
+  placeBomb: boolean
+}
+
+export interface Player1Controls {
+  consumeTickInput: () => PlayerTickInput
+}
+
+export const bindPlayer1Controls = (): Player1Controls => {
+  // Most recent direction is at the end.
+  let directionRequests: CardinalDirection[] = []
+  let placeBombRequested = false
+
   document.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.repeat) {
       // Ignore repeated key presses to prevent multiple actions
@@ -8,28 +21,27 @@ export const bindPlayer1Controls = (character: Character) => {
     }
     switch (event.key) {
       case "ArrowUp":
-        character.actionRequest = "move"
-        character.directionRequests.push("up")
+        directionRequests = directionRequests.filter((d) => d !== "up")
+        directionRequests.push("up")
         break
       case "ArrowDown":
-        character.actionRequest = "move"
-        character.directionRequests.push("down")
+        directionRequests = directionRequests.filter((d) => d !== "down")
+        directionRequests.push("down")
         break
       case "ArrowLeft":
-        character.actionRequest = "move"
-        character.directionRequests.push("left")
+        directionRequests = directionRequests.filter((d) => d !== "left")
+        directionRequests.push("left")
         break
       case "ArrowRight":
-        character.actionRequest = "move"
-        character.directionRequests.push("right")
+        directionRequests = directionRequests.filter((d) => d !== "right")
+        directionRequests.push("right")
         break
       case "Space":
-        console.log("Action/Place Bomb")
+        placeBombRequested = true
         break
       default:
         break
     }
-    console.log(`Direction Requests: ${character.directionRequests.join(", ")}`)
   })
 
   document.addEventListener("keyup", (event: KeyboardEvent) => {
@@ -39,7 +51,7 @@ export const bindPlayer1Controls = (character: Character) => {
       case "ArrowLeft":
       case "ArrowRight":
         // Remove the direction request when the key is released
-        character.directionRequests = character.directionRequests.filter(
+        directionRequests = directionRequests.filter(
           (dir) =>
             dir !==
             (event.key.replace("Arrow", "").toLowerCase() as
@@ -48,13 +60,21 @@ export const bindPlayer1Controls = (character: Character) => {
               | "left"
               | "right"),
         )
-        // If no direction requests are left, reset action request
-        if (character.directionRequests.length === 0) {
-          character.actionRequest = null
-        }
         break
       default:
         break
     }
   })
+
+  return {
+    consumeTickInput: () => {
+      const direction =
+        directionRequests.length > 0
+          ? directionRequests[directionRequests.length - 1]
+          : null
+      const placeBomb = placeBombRequested
+      placeBombRequested = false
+      return { direction, placeBomb }
+    },
+  }
 }

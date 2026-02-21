@@ -121,12 +121,7 @@ export const updatePlayer = (
     return
   }
   const distance = determineDeltaDistance(player, deltaTime)
-  movePlayer(
-    player,
-    board,
-    currentDirectionRequest,
-    distance,
-  )
+  movePlayer(player, board, currentDirectionRequest, distance)
   // Consider the second direction request, is it allowed?
   const previousDirectionRequest = player.directionRequests[1]
   if (previousDirectionRequest) {
