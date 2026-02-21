@@ -1,3 +1,7 @@
+/**
+ * Simulation state and tick-based movement rules.
+ */
+
 import { BoardState, createBoardState, getTile, isBlockedTile } from "./board"
 import { CardinalDirection } from "../world/character"
 
@@ -33,6 +37,14 @@ export type GameEvent =
   | {
       tick: number
       type: "move_started"
+      playerId: string
+      from: DiscretePosition
+      to: DiscretePosition
+      direction: CardinalDirection
+    }
+  | {
+      tick: number
+      type: "direction_reversed"
       playerId: string
       from: DiscretePosition
       to: DiscretePosition
@@ -87,13 +99,6 @@ const oppositeDirection = (dir: CardinalDirection): CardinalDirection => {
     }
   }
 }
-
-const lerp = (a: number, b: number, t: number): number => a + (b - a) * t
-
-const lerpPos = (from: Position, to: Position, t: number): Position => ({
-  x: lerp(from.x, to.x, t),
-  y: lerp(from.y, to.y, t),
-})
 
 const getTransitionProgressAtTick = (
   t: MoveTransition,
@@ -211,28 +216,42 @@ const reverseTransition = (
   state: GameState,
   player: PlayerState,
   requestedDirection: CardinalDirection,
-  config: StepConfig,
-) => {
+): void => {
   const t = player.transition
   if (!t) {
     return
   }
-  const elapsedMovingTicks = Math.max(0, state.tick - t.startedTick)
+
+  // Reverse by swapping the transition endpoints and shifting startedTick.
+  // This keeps speed (ticks per tile) constant across multiple reversals,
+  // and keeps interpolation anchored to board tile centers.
   const currentProgress = getTransitionProgressAtTick(t, state.tick)
-  const currentPos = lerpPos(t.fromPos, t.toPos, currentProgress)
+  const durationTicks = t.durationTicks
+  const startedTick = state.tick - (1 - currentProgress) * durationTicks
+
+  const fromTile = { ...t.toTile }
   const toTile = { ...t.fromTile }
 
   player.transition = {
-    fromPos: currentPos,
+    fromPos: { x: fromTile.x, y: fromTile.y },
     toPos: { x: toTile.x, y: toTile.y },
-    fromTile: { ...t.toTile },
+    fromTile,
     toTile,
-    startedTick: getMoveStartedTickFromIdle(state.tick, config),
-    durationTicks: elapsedMovingTicks,
+    startedTick,
+    durationTicks,
     direction: requestedDirection,
   }
   player.queuedDirection = null
   player.facing = requestedDirection
+
+  state.events.push({
+    tick: state.tick,
+    type: "direction_reversed",
+    playerId: player.id,
+    from: { ...fromTile },
+    to: { ...toTile },
+    direction: requestedDirection,
+  })
 }
 
 export const stepGameState = (
@@ -280,7 +299,7 @@ export const stepGameState = (
         player.facing = input.direction
         const opposite = oppositeDirection(player.transition.direction)
         if (input.direction === opposite) {
-          reverseTransition(state, player, input.direction, config)
+          reverseTransition(state, player, input.direction)
         } else if (
           canQueueDuringTransitionAtTick(player.transition, state.tick)
         ) {

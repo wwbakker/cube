@@ -1,7 +1,10 @@
 import * as THREE from "three"
 import { Object3D } from "three"
 
-export const createCursorMesh = (color: THREE.ColorRepresentation, size: number) => {
+export const createCursorMesh = (
+  color: THREE.ColorRepresentation,
+  size: number,
+) => {
   const points = [
     new THREE.Vector3(-size, 0, 0),
     new THREE.Vector3(size, 0, 0),
@@ -25,5 +28,3 @@ const cursorPosition = new THREE.Vector3(0, 0, 0)
 
 export const cursor3d = new Object3D().add(cursorMesh)
 cursor3d.position.copy(cursorPosition)
-
-
