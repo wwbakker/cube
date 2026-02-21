@@ -1,5 +1,11 @@
 /**
  * Simulation state and tick-based movement rules.
+ *
+ * Game state updates follow an explicit sequence when computing a new state:
+ * 1) Copy the previous game state.
+ * 2) Apply consequences of game event triggers on the copy (update positions,
+ *    create/advance ongoing events, etc.).
+ * 3) Gather game event triggers based on the resulting state and player inputs.
  */
 
 import { BoardState, createBoardState, getTile, isBlockedTile } from "./board"
@@ -31,6 +37,27 @@ export interface PlayerState {
   facing: CardinalDirection
   transition: MoveTransition | null
   queuedDirection: CardinalDirection | null
+}
+
+export type EventType =
+  | "move_started"
+  | "direction_reversed"
+  | "move_blocked"
+  | "move_completed"
+
+export interface EventTrigger {
+  happenedOnTick: number
+  eventType: EventType
+}
+
+export interface EventTriggerLog {
+  triggers: EventTrigger[]
+}
+
+export type OngoingEvent = {
+  eventType: "move_transition"
+  playerId: string
+  transition: MoveTransition
 }
 
 export type GameEvent =
@@ -70,7 +97,12 @@ export interface GameState {
   tick: number
   board: BoardState
   players: Record<string, PlayerState>
+  // Simulation events emitted while producing this state.
   events: GameEvent[]
+  // Derived view of stateful (multi-tick) events.
+  ongoingEvents: OngoingEvent[]
+  // Trigger log for this tick.
+  eventTriggerLog: EventTriggerLog
 }
 
 export interface PlayerTickInput {
@@ -167,7 +199,58 @@ export const createInitialGameState = (
       },
     },
     events: [],
+    ongoingEvents: [],
+    eventTriggerLog: { triggers: [] },
   }
+}
+
+const cloneGameState = (prev: GameState): GameState => {
+  return {
+    tick: prev.tick,
+    board: prev.board,
+    players: Object.fromEntries(
+      Object.entries(prev.players).map(([id, p]) => [
+        id,
+        {
+          ...p,
+          tile: { ...p.tile },
+          transition: p.transition
+            ? {
+                ...p.transition,
+                fromPos: { ...p.transition.fromPos },
+                toPos: { ...p.transition.toPos },
+                fromTile: { ...p.transition.fromTile },
+                toTile: { ...p.transition.toTile },
+              }
+            : null,
+        },
+      ]),
+    ) as Record<string, PlayerState>,
+    events: [],
+    ongoingEvents: [],
+    eventTriggerLog: { triggers: [] },
+  }
+}
+
+const syncOngoingEventsFromPlayers = (state: GameState): void => {
+  const ongoing: OngoingEvent[] = []
+  for (const p of Object.values(state.players)) {
+    if (!p.transition) {
+      continue
+    }
+    ongoing.push({
+      eventType: "move_transition",
+      playerId: p.id,
+      transition: {
+        ...p.transition,
+        fromPos: { ...p.transition.fromPos },
+        toPos: { ...p.transition.toPos },
+        fromTile: { ...p.transition.fromTile },
+        toTile: { ...p.transition.toTile },
+      },
+    })
+  }
+  state.ongoingEvents = ongoing
 }
 
 const maybeStartMove = (
@@ -175,7 +258,7 @@ const maybeStartMove = (
   player: PlayerState,
   direction: CardinalDirection,
   config: StepConfig,
-) => {
+): void => {
   const fromTile = player.tile
   const toTile = moveByDirection(fromTile, direction)
   const tileAtTarget = getTile(state.board, toTile.x, toTile.y)
@@ -254,37 +337,11 @@ const reverseTransition = (
   })
 }
 
-export const stepGameState = (
-  prev: GameState,
+const applyConsequencesFromInputs = (
+  state: GameState,
   inputs: Record<string, PlayerTickInput>,
   config: StepConfig,
-): GameState => {
-  // Shallow-ish copy; core state is small for now.
-  const state: GameState = {
-    tick: prev.tick,
-    board: prev.board,
-    players: Object.fromEntries(
-      Object.entries(prev.players).map(([id, p]) => [
-        id,
-        {
-          ...p,
-          tile: { ...p.tile },
-          transition: p.transition
-            ? {
-                ...p.transition,
-                fromPos: { ...p.transition.fromPos },
-                toPos: { ...p.transition.toPos },
-                fromTile: { ...p.transition.fromTile },
-                toTile: { ...p.transition.toTile },
-              }
-            : null,
-        },
-      ]),
-    ) as Record<string, PlayerState>,
-    events: [],
-  }
-
-  // 1) Apply inputs (start/queue moves) at the current tick.
+): void => {
   for (const [playerId, player] of Object.entries(state.players)) {
     const input = inputs[playerId]
     if (!input) {
@@ -316,11 +373,16 @@ export const stepGameState = (
     // Bomb logic not implemented yet; this is a placeholder for future events.
     void input.placeBomb
   }
+}
 
-  // 2) Advance tick.
-  state.tick = prev.tick + 1
+const advanceTickAndResolveOngoingEvents = (
+  state: GameState,
+  config: StepConfig,
+): void => {
+  // Advance tick.
+  state.tick = state.tick + 1
 
-  // 3) Complete transitions that have reached their duration.
+  // Complete transitions that have reached their duration.
   for (const player of Object.values(state.players)) {
     const t = player.transition
     if (!t) {
@@ -344,6 +406,32 @@ export const stepGameState = (
       }
     }
   }
+}
+
+const gatherEventTriggerLog = (events: GameEvent[]): EventTriggerLog => {
+  return {
+    triggers: events.map((e) => ({
+      happenedOnTick: e.tick,
+      eventType: e.type,
+    })),
+  }
+}
+
+export const stepGameState = (
+  prev: GameState,
+  inputs: Record<string, PlayerTickInput>,
+  config: StepConfig,
+): GameState => {
+  // 1) Copy the previous game state.
+  const state = cloneGameState(prev)
+
+  // 2) Apply consequences on the copied state.
+  applyConsequencesFromInputs(state, inputs, config)
+  advanceTickAndResolveOngoingEvents(state, config)
+  syncOngoingEventsFromPlayers(state)
+
+  // 3) Gather game event triggers based on the resulting state and inputs.
+  state.eventTriggerLog = gatherEventTriggerLog(state.events)
 
   return state
 }

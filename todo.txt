@@ -1,0 +1,29 @@
+We hebben opencode gevraagd de volgende veranderingen door te voeren, echter is het er soort van naast gebouwd.
+
+
+
+
+
+We would like to be more explicit about the game logic order. There should be an explicit sequence when computing a new game state.
+- Copy the previous game state.
+- Apply consequences of game event triggers on the copy of the game state, transform these into OngoingEvents, update positions, etc.
+- Gather game event triggers based on the game state and player inputs
+
+Data model regarding game events:
+- EventTriggerLog
+    - Array of EventTrigger objects
+- EventTrigger
+    - HappenedOnTick
+    - EventType
+
+- GameState
+    - List of Players
+    - List of OngoingEvents
+    - Board
+
+- Player
+    - Position
+
+- OngoingEvent
+    - EventType
+    - Event dependent state
